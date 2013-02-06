@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+      package="fr.grea09.android.authentic"
+      android:versionCode="1"
+      android:versionName="1.0">
+<!-- Due to android limitations you will need to copy these informations in your AndroidManifest.xml		  -->
+	
+	<uses-permission android:name="android.permission.GET_ACCOUNTS" />
+	<uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
+	<uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
+	<uses-permission android:name="android.permission.USE_CREDENTIALS" />
+	<uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+	<uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+    <application android:label="@string/app_name" android:icon="@drawable/ic_launcher">
+        <activity android:name=".ui.activity.AccountChooser"
+                  android:label="@string/app_name">
+        </activity>
+    </application>
+</manifest>

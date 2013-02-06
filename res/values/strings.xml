@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Authentic</string>
+	
+	<string name="account_authorized">Authorized</string>
+	<string name="account_unauthorized">Locked</string>
+</resources>
