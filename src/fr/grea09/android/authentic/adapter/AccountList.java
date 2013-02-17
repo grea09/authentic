@@ -6,14 +6,13 @@ package fr.grea09.android.authentic.adapter;
 
 import android.accounts.Account;
 import android.app.Activity;
-import android.content.Context;
+import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import fr.grea09.android.authentic.ui.fragment.AccountSelection;
-import java.util.HashMap;
+import fr.grea09.android.authentic.ui.fragment.AccountSelection.State;
 import java.util.List;
-import java.util.Map;
 
 /**
  *
@@ -21,9 +20,10 @@ import java.util.Map;
  */
 public class AccountList extends ArrayAdapter<Account>
 {
-	public final Map<Integer, Boolean[]> states = new HashMap<Integer, Boolean[]>();
+	public final SparseArray<State> states = new SparseArray<State>();
 	
 	private Activity activity;
+	
 
 	public AccountList(Activity activity, int resource, int textViewResourceId, List<Account> objects)
 	{
@@ -66,13 +66,13 @@ public class AccountList extends ArrayAdapter<Account>
 	{
 		AccountSelection accountSelection = new AccountSelection(getItem(position));
 		accountSelection.activity(activity);
-		if(states.containsKey(position))
+		View view = accountSelection.reUse(convertView, parent);
+		if(states.indexOfKey(position) > 0 )
 		{
-			accountSelection.authorized(states.get(position)[0]);
-			accountSelection.loading(states.get(position)[1]);
+			accountSelection.state(states.get(position));
 		}
 		
-		return accountSelection.reUse(convertView, parent);
+		return view;
 		//		return super.getView(position, convertView, parent);
 	}
 	

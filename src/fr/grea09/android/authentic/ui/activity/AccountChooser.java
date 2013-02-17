@@ -26,6 +26,8 @@ import android.widget.ListView;
 import android.widget.Toast;
 import fr.grea09.android.authentic.adapter.AccountList;
 import fr.grea09.android.authentic.logic.Token;
+import fr.grea09.android.authentic.ui.fragment.AccountSelection;
+import fr.grea09.android.authentic.ui.fragment.AccountSelection.State;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -45,9 +47,11 @@ public class AccountChooser extends ListActivity
 	public static int resultCode;
 	public static final Object wait = new Object();
 	
-	public static final String INTENT = "intent_to_call";
+	public static final String ACCOUNT_TYPES = "account_types";
+	
 	public static final String PREFERENCE_ACCOUNTS_KEY = "accounts";
 	public static final String PREFERENCE_NAME = "authentic";
+	
 	public static final String AUTHORIZE = "authorize";
 	public static final String TO_AUTHORIZE = "to_authorize";
 	
@@ -61,22 +65,22 @@ public class AccountChooser extends ListActivity
 		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         super.onCreate(savedInstanceState);
 		setProgressBarIndeterminateVisibility(false);
-		if(getIntent().getBundleExtra(INTENT) != null)
-		{
-			startActivityForResult((Intent) getIntent().getBundleExtra(INTENT).get(INTENT), 0);
-			synchronized(wait)
-			{
-				try
-				{
-					wait.wait();
-				} catch (InterruptedException ex)
-				{
-					ex.printStackTrace();
-				}
-			}
-		}
+//		if(getIntent().getBundleExtra(INTENT) != null)
+//		{
+//			startActivityForResult((Intent) getIntent().getBundleExtra(INTENT).get(INTENT), 0);
+//			synchronized(wait)
+//			{
+//				try
+//				{
+//					wait.wait();
+//				} catch (InterruptedException ex)
+//				{
+//					ex.printStackTrace();
+//				}
+//			}
+//		}
 		
-		accounts = Arrays.asList(AccountManager.get(getApplicationContext()).getAccountsByType("com.google"));
+		accounts = Arrays.asList(AccountManager.get(getApplicationContext()).getAccounts());
 		this.setListAdapter(new AccountList(this, android.R.layout.simple_list_item_1, accounts));
 		
 		SharedPreferences settings = getSharedPreferences(PREFERENCE_NAME, 0);
@@ -89,10 +93,7 @@ public class AccountChooser extends ListActivity
 				String[] split = string.split(":");
 				account = new Account(split[0], split[1]);
 				authorized.add(account);
-				((AccountList) getListAdapter()).states.put(accounts.indexOf(account), new Boolean[]
-						{
-							true, false
-						});
+				((AccountList) getListAdapter()).states.put(accounts.indexOf(account), State.AUTHORIZED);
 				((AccountList) getListAdapter()).notifyDataSetChanged();
 			}
 		}
@@ -105,6 +106,34 @@ public class AccountChooser extends ListActivity
 				authorize(accounts.indexOf(intent.getParcelableExtra(TO_AUTHORIZE)));
 			}
 		}, new IntentFilter(AUTHORIZE));
+		
+		
+		registerReceiver(new BroadcastReceiver() {
+
+			@Override
+			public void onReceive(Context context, Intent intent)
+			{
+				Account account = (Account) intent.getParcelableExtra(Token.ACCOUNT_KEY);
+				authorized.add(account);
+				setProgressBarIndeterminateVisibility(false);
+				((AccountList) getListAdapter()).states.put(authorizing, State.AUTHORIZED);
+				authorizing = -1;
+				((AccountList) getListAdapter()).notifyDataSetChanged();
+			}
+		}, new IntentFilter(Token.BROADCAST_TOKEN_READY));
+		
+		registerReceiver(new BroadcastReceiver() {
+
+			@Override
+			public void onReceive(Context context, Intent intent)
+			{
+				setProgressBarIndeterminateVisibility(false);
+				((AccountList) getListAdapter()).states.put(authorizing, State.FAILLED);
+				authorizing = -1;
+				((AccountList) getListAdapter()).notifyDataSetChanged();
+			}
+		}, new IntentFilter(Token.BROADCAST_TOKEN_FAILLED));
+		
         
     }
 
@@ -160,17 +189,15 @@ public class AccountChooser extends ListActivity
 	
 	private void authorize(int position)
 	{
-		Boolean[] get = ((AccountList) getListAdapter()).states.get(position);
-		if(authorizing == -1 && (get==null || !get[0]))
+		State state = ((AccountList) getListAdapter()).states.get(position);
+		if(authorizing == -1 && (state==null || state != State.AUTHORIZED))
 		{
 			setProgressBarIndeterminateVisibility(true);
 			authorizing = position;
-			((AccountList) getListAdapter()).states.put(authorizing, new Boolean[]
-					{
-						false, true
-					});
+			((AccountList) getListAdapter()).states.put(authorizing, AccountSelection.State.LOADING);
 			((AccountList) getListAdapter()).notifyDataSetChanged();
-			Token token = new Token((Context) this, (Account) getListAdapter().getItem(position), "reader", false);
+			//TODO type parameter
+			Token token = new Token((Context) this, (Account) getListAdapter().getItem(position), "", false);
 		}
 	}
 	

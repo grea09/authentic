@@ -14,8 +14,8 @@ import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.ToggleButton;
 import fr.grea09.android.authentic.R;
 import fr.grea09.android.authentic.ui.activity.AccountChooser;
 import java.util.HashMap;
@@ -28,34 +28,64 @@ import java.util.Map;
 public class AccountSelection extends ExtendedFragment implements OnCheckedChangeListener
 {
 	public final Account account;
-	private boolean authorized = false;
+	private State state = null;
 	private ImageView logo;
 	private TextView type;
-	private ToggleButton authorize;
+	private ImageView authorize;
 	private TextView name;
 	
 	private final static Map<String, Drawable> icons = new HashMap<String, Drawable>();
+	private ProgressBar loading;
+	
+	public enum State
+	{
+		AUTHORIZED,
+		FAILLED,
+		LOADING;
+	}
 
 	public AccountSelection(Account account)
 	{
 		this.account = account;
 	}
 	
-	public AccountSelection(Account account, boolean authorized)
+	public AccountSelection(Account account, State state)
 	{
 		this.account = account;
-		this.authorized = authorized;
+		this.state = state;
 	}
 	
-	public void authorized(boolean authorized)
+	public void state(State state)
 	{
-		this.authorized = authorized;
-		authorize.setChecked(authorized);
-	}
-	
-	public void loading(boolean loading)
-	{
-		authorize.setEnabled(loading);
+		this.state = state;
+		
+		switch(state)
+		{
+			case AUTHORIZED :
+			case FAILLED :
+				authorize.setVisibility(View.VISIBLE);
+				loading.setVisibility(View.GONE);
+				break;
+			case LOADING :
+				authorize.setVisibility(View.GONE);
+				loading.setVisibility(View.VISIBLE);
+				break;
+			default:
+				authorize.setVisibility(View.GONE);
+				loading.setVisibility(View.GONE);
+				break;
+		}
+		
+		switch(state)
+		{
+			case AUTHORIZED : 
+				authorize.setImageResource(R.drawable.ic_action_dark_check);
+				break;
+			case FAILLED : 
+				authorize.setImageResource(R.drawable.ic_action_dark_cancel);
+				break;
+		}
+		
 	}
 
 
@@ -63,20 +93,24 @@ public class AccountSelection extends ExtendedFragment implements OnCheckedChang
 	protected void draw()
 	{
 		if(view==null)
+		{
 			return;
+		}
 		logo = (ImageView) find(R.id.account_logo);
 		logo.setImageDrawable(icon());
 		
-		type = (TextView) find(R.id.account_type);
-		type.setText(account.type);
+//		type = (TextView) find(R.id.account_type);
+//		type.setText(account.type);
 		
 		name = (TextView) find(R.id.account_name);
 		name.setText(account.name);
 		
-		authorize = (ToggleButton) find(R.id.account_authorize);
-		authorize.setChecked(authorized);
+		authorize = (ImageView) find(R.id.account_authorize);
+//		authorize.setChecked(authorized);
 		
-		authorize.setOnCheckedChangeListener(this);
+//		authorize.setOnCheckedChangeListener(this);
+		
+		loading = (ProgressBar) find(R.id.account_loading);
 		
 	}
 
@@ -122,7 +156,7 @@ public class AccountSelection extends ExtendedFragment implements OnCheckedChang
 				icons.put(description.type, packageManager.getDrawable(description.packageName, description.iconId, null));
 			}
 		}
-		return icons.get(account);
+		return icons.get(account.type);
 	}
 	
 }
